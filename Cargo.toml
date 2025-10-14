@@ -4,8 +4,19 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-eframe = { version = "0.32.1", features = ["default",
-]}
 reqwest = { version = "0.12.22", features = ["blocking",
 ]}
 rss = "2.0.12"
+eframe = { version = "0.32", default-features = false, features = [
+    "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
+    "default_fonts", # Embed the default egui fonts.
+    "glow",          # Use the glow rendering backend. Alternative: "wgpu".
+    "persistence",   # Enable restoring app state when restarting the app.
+    "wayland",       # To support Linux (and CI)
+    "x11",           # To support older Linux distributions (restores one of the default features)
+] }
+log = "0.4.27"
+env_logger = "0.11.8"
+serde = { version = "1.0.219", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+mini-redis = "0.4"
