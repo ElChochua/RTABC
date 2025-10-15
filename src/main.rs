@@ -1,8 +1,10 @@
 use eframe::egui;
+use tokio::task;
 
 mod app;
-
-fn main() {
+#[tokio::main]
+async fn main() {
+    let v = vec![1,2,3];
     env_logger::init();
     let native_options = eframe::NativeOptions{
         viewport: egui::ViewportBuilder::default().with_inner_size([900.0,600.0]).
@@ -13,4 +15,8 @@ fn main() {
                        native_options,
                        Box::new(|cc| Ok(Box::new(app::App::new(cc)))),
     ).expect("TODO: panic message");
+    //Just testing the tokio library
+    task::spawn(async move {
+        println!("vec {:?}", v);
+    });
 }

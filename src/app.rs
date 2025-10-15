@@ -1,4 +1,4 @@
-use eframe::{egui, Storage};
+use eframe::{egui};
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)]
 pub struct App{
