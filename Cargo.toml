@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 reqwest = { version = "0.12.22", features = ["blocking",
 ]}
+enigo = "0.5.0"
 rss = "2.0.12"
 eframe = { version = "0.32", default-features = false, features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
@@ -18,5 +19,5 @@ eframe = { version = "0.32", default-features = false, features = [
 log = "0.4.27"
 env_logger = "0.11.8"
 serde = { version = "1.0.219", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
+tokio = { version =  "1", features = ["full"] }
 mini-redis = "0.4"
