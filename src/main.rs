@@ -42,8 +42,8 @@ fn main() -> eframe::Result {
             let mut network_stopper_disc: Option<tokio::sync::mpsc::Sender<()>> = None;
             let mut network_stopper_audio: Option<tokio::sync::mpsc::Sender<()>> = None;
 
-            // Estado asíncrono compartido que guardará la IP del teléfono cliente cuando se conecte
-            let client_addr = Arc::new(RwLock::new(None));
+            // Estado asíncrono compartido que guardará la IP del teléfono cliente y su último avistamiento (Latido)
+            let client_addr: Arc<RwLock<Option<(std::net::SocketAddr, std::time::Instant)>>> = Arc::new(RwLock::new(None));
             // Guardamos el stream vivo de Cpal para que siga capturando
             let mut _active_audio_stream: Option<audio::AudioCapture> = None;
             // Guardián del Silencio Físico Local de Windows

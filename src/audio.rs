@@ -26,10 +26,13 @@ impl AudioCapture {
         );
 
         // 3. Obtener la configuración que Windows está usando actualmente (Ej. 48000Hz, Stereo)
-        let config: StreamConfig = device
+        let mut config: StreamConfig = device
             .default_output_config()
             .map_err(|e| format!("Error en config: {}", e))?
             .into();
+
+        // Forzar baja latencia exigiendo que se llenen sólo 256 samples antes de callback
+        config.buffer_size = cpal::BufferSize::Fixed(256);
 
         println!(
             "CPAL: Tasa de Muestreo: {} Hz, Canales: {}",
