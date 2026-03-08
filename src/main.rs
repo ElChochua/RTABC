@@ -67,7 +67,7 @@ fn main() -> eframe::Result {
                                 Ok(capture) => {
                                     _active_audio_stream = Some(capture);
                                     println!("Tokio: Cpal Ringbuf linkeados OK.");
-                                    
+
                                     // Fase 6: Activar Mute Master local si el usuario lo pidió
                                     if mute_local {
                                         match windows_mixer::VolumeManager::new() {
@@ -138,7 +138,7 @@ fn main() -> eframe::Result {
                             }
                             // 2. Apagar motor de hardware de audio (Cpal lo corta al destruir el struct)
                             _active_audio_stream = None;
-                            
+
                             // 3. Restaurar Sonido Maestro en PC Local (El Trait Drop de windows_mixer lo hace por nosotros al setear a None, pero para estar seguros:)
                             if let Some(mut guardian) = active_mute_guardian.take() {
                                 let _ = guardian.set_mute(false);
