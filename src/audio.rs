@@ -3,60 +3,55 @@ use cpal::{Stream, StreamConfig};
 use ringbuf::traits::Producer;
 
 pub struct AudioCapture {
-    // Mantendremos vivo el Stream aquí para que no se destruya al salir de la función
+    // We will keep the Stream alive here so it doesn't get destroyed when exiting the function
     _stream: Stream,
 }
 
 impl AudioCapture {
-    /// Inicia la captura del Loopback (El audio general de Windows)
+    /// Starts the Loopback capture (The general Windows audio)
     pub fn start_loopback(
         mut producer: impl ringbuf::traits::Producer<Item = f32> + Send + 'static,
     ) -> Result<Self, String> {
-        // 1. Obtener el Host de Audio (WASAPI en Windows)
+        // 1. Get the Audio Host (WASAPI in Windows)
         let host = cpal::default_host();
 
-        // 2. Encontrar el Dispositivo Predeterminado de SALIDA (nuestras bocinas/auriculares)
+        // 2. Find the Default OUTPUT Device (our speakers/headphones)
         let device = host
             .default_output_device()
-            .ok_or("No se encontró ningún dispositivo de salida.")?;
+            .ok_or("No output device found.")?;
 
-        println!(
-            "CPAL: Utilizando dispositivo: {}",
-            device.name().unwrap_or_default()
-        );
+        println!("CPAL: Using device: {}", device.name().unwrap_or_default());
 
-        // 3. Obtener la configuración que Windows está usando actualmente (Ej. 48000Hz, Stereo)
+        // 3. Get the configuration that Windows is currently using (e.g., 48000Hz, Stereo)
         let mut config: StreamConfig = device
             .default_output_config()
             .map_err(|e| format!("Error en config: {}", e))?
             .into();
 
-        // Forzar baja latencia exigiendo que se llenen sólo 256 samples antes de callback
+        // Force low latency by requiring only 256 samples to be filled before callback
         config.buffer_size = cpal::BufferSize::Fixed(256);
 
         println!(
-            "CPAL: Tasa de Muestreo: {} Hz, Canales: {}",
+            "CPAL: Sample Rate: {} Hz, Channels: {}",
             config.sample_rate, config.channels
         );
-        // OJO: Usamos build_input_stream en un dispositivo de salida para hacer "Loopback"
+        // NOTE: We use build_input_stream on an output device to do "Loopback"
         let stream = device
             .build_input_stream(
                 &config,
                 move |data: &[f32], _: &cpal::InputCallbackInfo| {
-                    // Empuja tantos f32 como entren en el Anillo
+                    // Push as many f32 as fit in the Ring
                     let _ = producer.push_slice(data);
                 },
                 move |err| {
-                    eprintln!("Error en el Stream de Audio: {}", err);
+                    eprintln!("Error in Audio Stream: {}", err);
                 },
-                None, // Timeout opcional
+                None, // Optional timeout
             )
-            .map_err(|e| format!("No se pudo construir Stream: {}", e))?;
+            .map_err(|e| format!("Could not build Stream: {}", e))?;
 
-        // Arrancamos el motor de captura de audio a nivel Windows
-        stream
-            .play()
-            .map_err(|e| format!("Error reproduciendo: {}", e))?;
+        // Start the audio capture engine at the Windows level
+        stream.play().map_err(|e| format!("Error playing: {}", e))?;
 
         Ok(Self { _stream: stream })
     }
