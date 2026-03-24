@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 cpal = "0.17.3"
+enigo = "0.1.2"
 
 eframe = { version = "0.32", default-features = false, features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
@@ -18,4 +19,11 @@ local-ip-address = "0.6.10"
 ringbuf = "0.4.8"
 serde = { version = "1.0.219", features = ["derive"] }
 tokio = { version = "1", features = ["full", "macros", "net", "rt-multi-thread", "time"] }
-windows = { version = "0.62.2", features = ["Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Variant"] }
+windows = { version = "0.62.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_Media_Audio", "Win32_Media_Audio_Endpoints", "Win32_System_Com", "Win32_System_Com_StructuredStorage", "Win32_System_Variant"] }
+
+tray-icon = "0.21.3"
+image = "0.25.10"
+
+[build-dependencies]
+winres = "0.1.12"
+image = "0.25.10"

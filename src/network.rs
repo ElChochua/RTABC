@@ -84,7 +84,7 @@ async fn handle_incoming_discovery_packet(
 ) {
     // If we receive the secret key from the cell phone
     if packet == PING_MESSAGE {
-        println!("Magic Ping received from {}!", src_addr);
+        // println!("Magic Ping received from {}!", src_addr);
 
         // Save or update the client's IP in shared memory by adding the current exact time
         {
@@ -101,15 +101,15 @@ async fn handle_incoming_discovery_packet(
                 src_addr, e
             );
         } else {
-            println!(
-                "Wave returned to the cell phone successfully. ({})",
-                src_addr
-            );
+            // println!(
+            //     "Wave returned to the cell phone successfully. ({})",
+            //     src_addr
+            // );
         }
     }
 }
 
-/// Drena continuamente el `Ringbuf` de Audio y los encapsula en Datagramas UDP hacia el cliente
+/// Drain the audio ringbuffer and send it to the client
 pub async fn start_audio_streamer(
     mut consumer: impl ringbuf::traits::Consumer<Item = f32> + Send + 'static,
     mut rx_stop: tokio::sync::mpsc::Receiver<()>,
@@ -162,8 +162,9 @@ pub async fn start_audio_streamer(
 
                 if let Some((mut addr, last_heartbeat)) = target_info {
                     // The passive Supervisor: We act as a zombie collector by checking the heartbeat
-                    if last_heartbeat.elapsed().as_secs() > 3 {
-                        println!("Heartbeat lost: Client {} disconnected due to inactivity (>3s). Purging IP...", addr);
+                    // Relaxed to tolerate Android's "Doze Mode" (5 minutes = 300 seconds)
+                    if last_heartbeat.elapsed().as_secs() > 300 {
+                        println!("Heartbeat lost: Client {} disconnected due to extended inactivity (>5m Doze Mode). Purging IP...", addr);
                         let mut lock = client_addr.write().await;
                         *lock = None;
                         continue; // Skip to discard the buffer
@@ -208,6 +209,55 @@ pub async fn start_audio_streamer(
 
             _ = rx_stop.recv() => {
                 println!("Shutting down UDP audio streamer...");
+                break;
+            }
+        }
+    }
+}
+
+/// Start the AVRCP UDP server to receive media commands from Android
+pub async fn start_avrcp_receiver(mut rx_stop: tokio::sync::mpsc::Receiver<()>) {
+    let addr = "0.0.0.0:8889";
+    let socket = match UdpSocket::bind(addr).await {
+        Ok(s) => s,
+        Err(e) => {
+            println!("Failed to allocate AVRCP socket on {}: {}", addr, e);
+            return;
+        }
+    };
+
+    println!("AVRCP UDP Server listening for media commands on {}", addr);
+
+    // Usamos enigo 0.1.2 que expone KeyboardControllable y Key
+    use enigo::{Enigo, Key, KeyboardControllable};
+    let mut enigo = Enigo::new();
+    let mut buf = [0u8; 128];
+
+    loop {
+        tokio::select! {
+            result = socket.recv_from(&mut buf) => {
+                match result {
+                    Ok((len, src_addr)) => {
+                        if let Ok(command) = std::str::from_utf8(&buf[..len]) {
+                            let command = command.trim();
+                            // println!("AVRCP Command received from {}: {:?}", src_addr, command);
+
+                            match command {
+                                "play_pause" => enigo.key_click(Key::MediaPlayPause),
+                                "next" => enigo.key_click(Key::MediaNextTrack),
+                                "prev" => enigo.key_click(Key::MediaPrevTrack),
+                                _ => println!("Unknown AVRCP command: {}", command),
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("Error reading AVRCP packet: {}", e);
+                    }
+                }
+            }
+
+            _ = rx_stop.recv() => {
+                println!("Shutting down AVRCP receiver...");
                 break;
             }
         }
