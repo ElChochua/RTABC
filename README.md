@@ -7,7 +7,7 @@
 
 The project is divided into two parts:
 1. **RTABC (Real-Time Audio Broadcasting Client)**: The Windows PC server written in Rust using `egui` and `tokio`.
-2. **RTAR (Real-Time Audio Receiver)**: The Android client application built with Tauri and Rust.
+2. **<a href="https://github.com/ElChochua/RTAR"> RTAR (Real-Time Audio Receiver) </a>**: The Android client application built with Tauri and Rust.
 
 ## Key Features
 
