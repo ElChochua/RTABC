@@ -12,17 +12,17 @@ impl AudioCapture {
     pub fn start_loopback(
         mut producer: impl ringbuf::traits::Producer<Item = f32> + Send + 'static,
     ) -> Result<Self, String> {
-        // 1. Get the Audio Host (WASAPI in Windows)
+        // Get the Audio Host (WASAPI in Windows)
         let host = cpal::default_host();
 
-        // 2. Find the Default OUTPUT Device (our speakers/headphones)
+        // Find the Default OUTPUT Device (our speakers/headphones)
         let device = host
             .default_output_device()
             .ok_or("No output device found.")?;
 
         println!("CPAL: Using device: {}", device.name().unwrap_or_default());
 
-        // 3. Get the configuration that Windows is currently using (e.g., 48000Hz, Stereo)
+        // Get the configuration that Windows is currently using (e.g., 48000Hz, Stereo)
         let mut config: StreamConfig = device
             .default_output_config()
             .map_err(|e| format!("Error en config: {}", e))?

@@ -16,10 +16,10 @@ impl VolumeManager {
     pub fn set_mute(&mut self, state: bool) -> std::result::Result<(), String> {
         let handle = thread::spawn(move || {
             unsafe {
-                // 1. Initialize COM
+                // Initialize COM
                 let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
 
-                // 2. Try to find device and invoke mute
+                // Try to find device and invoke mute
                 if let Err(e) = set_master_mute_unsafe(state) {
                     eprintln!("Native CoreAudio failure: {:?}", e);
                 }

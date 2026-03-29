@@ -47,7 +47,7 @@ pub async fn start_discovery_server(
     loop {
         // tokio::select! allows us to wait for multiple future events and see which one occurs first
         tokio::select! {
-            // Case 1: Someone on the network sent us a message
+            // Someone on the network sent us a message
             result = socket.recv_from(&mut buf) => {
                 match result {
                     Ok((len, src_addr)) => {
@@ -66,7 +66,7 @@ pub async fn start_discovery_server(
                 }
             }
 
-            // Case 2: The main loop asks us to cancel this service (StopServer pressed)
+            // The main loop asks us to cancel this service (StopServer pressed)
             _ = rx_stop.recv() => {
                 println!("Shutting down UDP discovery server...");
                 break;
@@ -127,32 +127,12 @@ pub async fn start_audio_streamer(
     // Extreme low latency: 2ms instead of 15ms.
     let mut interval = tokio::time::interval(std::time::Duration::from_millis(2));
 
-    // Pure helper function in Rust to compress float (f32) to µ-Law (u8)
-    // Drastically reduces network weight by 75% (-24 bits of width)
+    // Helper function to convert f32 to i16 (16-bit Linear PCM Little Endian)
+    // We send audio in raw format for maximum quality without compression
     #[inline]
-    fn f32_to_ulaw(sample: f32) -> u8 {
-        let pcm = (sample.clamp(-1.0, 1.0) * 32767.0) as i32;
-        let sign = if pcm < 0 { 0x80 } else { 0 };
-        let mag = pcm.abs().clamp(0, 32635) + 132;
-        let exponent = if mag >= 0x4000 {
-            7
-        } else if mag >= 0x2000 {
-            6
-        } else if mag >= 0x1000 {
-            5
-        } else if mag >= 0x0800 {
-            4
-        } else if mag >= 0x0400 {
-            3
-        } else if mag >= 0x0200 {
-            2
-        } else if mag >= 0x0100 {
-            1
-        } else {
-            0
-        };
-        let mantissa = (mag >> (exponent + 3)) & 0x0F;
-        !(sign | (exponent << 4) | mantissa as u8)
+    fn f32_to_i16_le_bytes(sample: f32) -> [u8; 2] {
+        let pcm = (sample.clamp(-1.0, 1.0) * 32767.0) as i16;
+        pcm.to_le_bytes()
     }
 
     loop {
@@ -179,10 +159,13 @@ pub async fn start_audio_streamer(
                     loop {
                         packet_buf.clear();
 
-                        // Fill the temporary buffer until we have a juicy frame (e.g. 960 samples)
+                        // Fill the temporary buffer until we have a juicy frame (max ~1400 bytes to avoid MTU overflow)
                         while let Some(sample) = consumer.try_pop() {
-                            packet_buf.push(f32_to_ulaw(sample));
-                            if packet_buf.len() == 1400 { // Maximize to MTU directly to reduce WiFi overhead
+                            let bytes = f32_to_i16_le_bytes(sample);
+                            packet_buf.extend_from_slice(&bytes);
+
+                            // Maximize to MTU directly to reduce WiFi overhead. 1400 bytes = 700 samples (2 bytes/sample)
+                            if packet_buf.len() >= 1400 {
                                 break;
                             }
                         }
@@ -192,7 +175,7 @@ pub async fn start_audio_streamer(
                                 // Silently ignore network errors
                             }
 
-                            // If we took less than 1400, it means the RingBuffer emptied
+                            // If we took less than 1400 bytes, it means the RingBuffer emptied
                             if packet_buf.len() < 1400 {
                                 break;
                             }
@@ -228,7 +211,7 @@ pub async fn start_avrcp_receiver(mut rx_stop: tokio::sync::mpsc::Receiver<()>) 
 
     println!("AVRCP UDP Server listening for media commands on {}", addr);
 
-    // Usamos enigo 0.1.2 que expone KeyboardControllable y Key
+    // We use enigo 0.1.2 that exposes KeyboardControllable and Key
     use enigo::{Enigo, Key, KeyboardControllable};
     let mut enigo = Enigo::new();
     let mut buf = [0u8; 128];
