@@ -2,9 +2,12 @@
 
 **LocalAudioLink** is an ultra-low latency, real-time local network (LAN) audio streaming application suite. It captures the system audio from a Windows PC and streams it directly to an Android device over Wi-Fi, functioning as a wireless headset replacement with near-zero latency suitable for gaming and media consumption.
 
+
+<img align="center" width="500" height="329" alt="image" src="https://github.com/user-attachments/assets/04c42fb1-a64d-4bca-84db-cc352bcb99d1" />
+
 The project is divided into two parts:
 1. **RTABC (Real-Time Audio Broadcasting Client)**: The Windows PC server written in Rust using `egui` and `tokio`.
-2. **RTAR (Real-Time Audio Receiver)**: The Android client application built with Tauri and Rust.
+2. **<a href="https://github.com/ElChochua/RTAR"> RTAR (Real-Time Audio Receiver) </a>**: The Android client application built with Tauri and Rust.
 
 ## Key Features
 
