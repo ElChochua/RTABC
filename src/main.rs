@@ -11,7 +11,9 @@ use tokio::sync::RwLock;
 
 mod app;
 mod audio;
+mod audio_codec;
 mod network; // <--- Import our experimental audio handler
+mod protocol;
 mod windows_mixer; // <--- Module to silence locally
 
 // Define the messages that the UI can send to the Network Thread (Tokio)
@@ -72,7 +74,7 @@ fn main() -> eframe::Result {
                                 Ok(capture) => {
                                     _active_audio_stream = Some(capture);
                                     println!("Tokio: Cpal Ringbuf linked OK.");
-                                    
+
                                     // Phase 6: Activate local Master Mute if the user requested it
                                     if mute_local {
                                         match windows_mixer::VolumeManager::new() {
@@ -154,7 +156,7 @@ fn main() -> eframe::Result {
                             }
                             // 2. Turn off the audio hardware motor (Cpal cuts it off when destroying the struct)
                             _active_audio_stream = None;
-                            
+
                             // 3. Restore Local Master Sound (The Drop Trait of windows_mixer does it for us by setting to None, but just in case:)
                             if let Some(mut guardian) = active_mute_guardian.take() {
                                 let _ = guardian.set_mute(false);

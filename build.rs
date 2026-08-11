@@ -2,8 +2,6 @@ fn main() {
     // Only compile the icon resource if we are on Windows
     #[cfg(target_os = "windows")]
     {
-        use image::ImageFormat;
-        use std::fs;
         use std::path::Path;
 
         // Rutas

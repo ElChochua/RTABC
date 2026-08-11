@@ -1,6 +1,5 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Stream, StreamConfig};
-use ringbuf::traits::Producer;
 
 pub struct AudioCapture {
     // We will keep the Stream alive here so it doesn't get destroyed when exiting the function
@@ -20,7 +19,13 @@ impl AudioCapture {
             .default_output_device()
             .ok_or("No output device found.")?;
 
-        println!("CPAL: Using device: {}", device.name().unwrap_or_default());
+        println!(
+            "CPAL: Using device: {}",
+            device
+                .description()
+                .map(|description| description.to_string())
+                .unwrap_or_else(|_| "Unknown output device".to_owned())
+        );
 
         // Get the configuration that Windows is currently using (e.g., 48000Hz, Stereo)
         let mut config: StreamConfig = device

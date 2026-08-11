@@ -4,7 +4,7 @@ use windows::Win32::Media::Audio::{IMMDeviceEnumerator, MMDeviceEnumerator, eMul
 use windows::Win32::System::Com::{
     CLSCTX_ALL, COINIT_MULTITHREADED, CoCreateInstance, CoInitializeEx, CoUninitialize,
 };
-use windows::core::{Interface, Result};
+use windows::core::Result;
 
 pub struct VolumeManager {}
 

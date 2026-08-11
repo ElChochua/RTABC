@@ -1,4 +1,6 @@
 use crate::NetworkEvent;
+use crate::audio_codec::{self, AudioEncoder};
+use crate::protocol::{self, Codec, FLAG_DISCONTINUITY, MediaKind, PacketHeader};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tokio::net::UdpSocket;
@@ -123,17 +125,16 @@ pub async fn start_audio_streamer(
         }
     };
 
-    let mut packet_buf = Vec::with_capacity(1024 * 4);
+    let mut packet_buf = Vec::with_capacity(protocol::MAX_DATAGRAM_LEN);
+    let mut frame_buf = Vec::with_capacity(audio_codec::FRAME_SAMPLES);
+    let mut encoder = AudioEncoder::new();
+    let stream_id = 1;
+    let mut sequence = 0_u32;
+    let mut discontinuity = false;
+    let mut connected = false;
     // Extreme low latency: 2ms instead of 15ms.
     let mut interval = tokio::time::interval(std::time::Duration::from_millis(2));
-
-    // Helper function to convert f32 to i16 (16-bit Linear PCM Little Endian)
-    // We send audio in raw format for maximum quality without compression
-    #[inline]
-    fn f32_to_i16_le_bytes(sample: f32) -> [u8; 2] {
-        let pcm = (sample.clamp(-1.0, 1.0) * 32767.0) as i16;
-        pcm.to_le_bytes()
-    }
+    interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     loop {
         tokio::select! {
@@ -141,6 +142,14 @@ pub async fn start_audio_streamer(
                 let target_info = { *client_addr.read().await };
 
                 if let Some((mut addr, last_heartbeat)) = target_info {
+                    if !connected {
+                        encoder.reset();
+                        frame_buf.clear();
+                        sequence = 0;
+                        discontinuity = true;
+                        connected = true;
+                    }
+
                     // The passive Supervisor: We act as a zombie collector by checking the heartbeat
                     // Relaxed to tolerate Android's "Doze Mode" (5 minutes = 300 seconds)
                     if last_heartbeat.elapsed().as_secs() > 300 {
@@ -153,40 +162,73 @@ pub async fn start_audio_streamer(
                     // The client (cellphone) must listen to the audio on port 5000
                     addr.set_port(5000);
 
-                    packet_buf.clear();
-
-                    // Extract samples and pack them
-                    loop {
-                        packet_buf.clear();
-
-                        // Fill the temporary buffer until we have a juicy frame (max ~1400 bytes to avoid MTU overflow)
-                        while let Some(sample) = consumer.try_pop() {
-                            let bytes = f32_to_i16_le_bytes(sample);
-                            packet_buf.extend_from_slice(&bytes);
-
-                            // Maximize to MTU directly to reduce WiFi overhead. 1400 bytes = 700 samples (2 bytes/sample)
-                            if packet_buf.len() >= 1400 {
-                                break;
-                            }
+                    // Keep no more than 30 ms of captured audio waiting for the encoder.
+                    let max_backlog = audio_codec::FRAME_SAMPLES * 3;
+                    let backlog = consumer.occupied_len();
+                    if backlog > max_backlog {
+                        frame_buf.clear();
+                        let drop_count = (backlog - max_backlog) / audio_codec::CHANNELS
+                            * audio_codec::CHANNELS;
+                        for _ in 0..drop_count {
+                            let _ = consumer.try_pop();
                         }
+                        encoder.reset();
+                        discontinuity = true;
+                    }
 
-                        if !packet_buf.is_empty() {
-                            if let Err(_e) = socket.send_to(&packet_buf, addr).await {
-                                // Silently ignore network errors
-                            }
-
-                            // If we took less than 1400 bytes, it means the RingBuffer emptied
-                            if packet_buf.len() < 1400 {
+                    // Cap work per tick so encoding never monopolizes the runtime.
+                    for _ in 0..4 {
+                        while frame_buf.len() < audio_codec::FRAME_SAMPLES {
+                            let Some(sample) = consumer.try_pop() else {
                                 break;
-                            }
-                        } else {
-                            // The ring buffer emptied completely
+                            };
+                            frame_buf.push(sample);
+                        }
+                        if frame_buf.len() < audio_codec::FRAME_SAMPLES {
                             break;
                         }
+
+                        let payload = match encoder.encode(&frame_buf) {
+                            Ok(payload) => payload,
+                            Err(error) => {
+                                eprintln!("Opus encode failed: {error}");
+                                encoder.reset();
+                                frame_buf.clear();
+                                discontinuity = true;
+                                break;
+                            }
+                        };
+                        frame_buf.clear();
+
+                        let header = PacketHeader {
+                            media_kind: MediaKind::Audio,
+                            codec: Codec::Opus,
+                            flags: if discontinuity { FLAG_DISCONTINUITY } else { 0 },
+                            stream_id,
+                            sequence,
+                            timestamp_us: u64::from(sequence)
+                                * audio_codec::FRAME_DURATION_MS as u64
+                                * 1_000,
+                            fragment_index: 0,
+                            fragment_count: 1,
+                        };
+                        discontinuity = false;
+                        if protocol::write_datagram(header, &payload, &mut packet_buf).is_err() {
+                            break;
+                        }
+                        if let Err(_error) = socket.send_to(&packet_buf, addr).await {
+                            // A late audio packet is worse than a dropped packet.
+                        }
+                        sequence = sequence.wrapping_add(1);
                     }
                 } else {
                     // If there is no client, we drain the buffer discarding it to prevent RAM overflow
-                    while let Some(_) = consumer.try_pop() {}
+                    while consumer.try_pop().is_some() {}
+                    if connected {
+                        encoder.reset();
+                        frame_buf.clear();
+                        connected = false;
+                    }
                 }
             }
 
@@ -220,7 +262,7 @@ pub async fn start_avrcp_receiver(mut rx_stop: tokio::sync::mpsc::Receiver<()>) 
         tokio::select! {
             result = socket.recv_from(&mut buf) => {
                 match result {
-                    Ok((len, src_addr)) => {
+                    Ok((len, _src_addr)) => {
                         if let Ok(command) = std::str::from_utf8(&buf[..len]) {
                             let command = command.trim();
                             // println!("AVRCP Command received from {}: {:?}", src_addr, command);

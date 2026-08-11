@@ -1,5 +1,7 @@
 # LocalAudioLink (RTABC & RTAR)
 
+> Refactor activo: Stage 2 usa Opus estéreo de 10 ms dentro del protocolo v1, con jitter buffer acotado y ocultación de pérdidas. Linux, HEVC y foreground services siguen definidos por stages en [docs/README.md](docs/README.md). Las descripciones históricas de µ-Law debajo no representan el estado actual.
+
 **LocalAudioLink** is an ultra-low latency, real-time local network (LAN) audio streaming application suite. It captures the system audio from a Windows PC and streams it directly to an Android device over Wi-Fi, functioning as a wireless headset replacement with near-zero latency suitable for gaming and media consumption.
 
 

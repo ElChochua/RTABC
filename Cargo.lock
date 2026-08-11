@@ -12,6 +12,7 @@ dependencies = [
  "image",
  "local-ip-address",
  "ringbuf",
+ "ruopus",
  "serde",
  "tokio",
  "tray-icon",
@@ -520,7 +521,7 @@ dependencies = [
  "num-traits",
  "pastey",
  "rayon",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "v_frame",
  "y4m",
 ]
@@ -2561,7 +2562,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "once_cell",
  "png 0.17.16",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "windows-sys 0.60.2",
 ]
 
@@ -2585,7 +2586,7 @@ dependencies = [
  "once_cell",
  "rustc-hash 1.1.0",
  "strum",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "unicode-ident",
 ]
 
@@ -3104,9 +3105,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.21.3"
+version = "1.21.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
+checksum = "9f7c3e4beb33f85d45ae3e3a1792185706c8e16d043238c593331cc7cd313b50"
 
 [[package]]
 name = "option-ext"
@@ -3259,9 +3260,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.32"
+version = "0.3.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7edddbd0b52d732b21ad9a5fab5c704c14cd949e5e9a1ec5929a24fded1b904c"
+checksum = "19f132c84eca552bf34cab8ec81f1c1dcc229b811638f9d283dceabe58c5569e"
 
 [[package]]
 name = "png"
@@ -3556,7 +3557,7 @@ dependencies = [
  "rand",
  "rand_chacha",
  "simd_helpers",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "v_frame",
  "wasm-bindgen",
 ]
@@ -3628,7 +3629,7 @@ checksum = "a4e608c6638b9c18977b00b475ac1f28d14e84b27d8d42f70e0bf1e3dec127ac"
 dependencies = [
  "getrandom 0.2.17",
  "libredox",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
 ]
 
 [[package]]
@@ -3666,6 +3667,12 @@ dependencies = [
  "serde_derive",
  "unicode-ident",
 ]
+
+[[package]]
+name = "ruopus"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcfcd963c83fc1ada2180ccdac7f1568d87fb0f2ad7236b266fdc9fb9122fbfd"
 
 [[package]]
 name = "rustc-demangle"
@@ -3971,6 +3978,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "syn"
+version = "3.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53e9bae58849f64dfa4f5d5ae372c8341f7305f82a3868709269343628b659a3"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
 name = "synstructure"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4033,11 +4051,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.17"
+version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f63587ca0f12b72a0600bcba1d40081f830876000bb46dd2337a3051618f4fc8"
+checksum = "ec86235f5fcc2a73650310756d2ac5b138a5780bbbdfae3eeccec992c435ba4f"
 dependencies = [
- "thiserror-impl 2.0.17",
+ "thiserror-impl 2.0.20",
 ]
 
 [[package]]
@@ -4053,13 +4071,13 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.17"
+version = "2.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ff15c8ecd7de3849db632e14d18d2571fa09dfc5ed93479bc4485c7a517c913"
+checksum = "bc04cd3e1236dd4a98afca4569f2deb3f120e5422a4023be2cb683f8486292af"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.106",
+ "syn 3.0.3",
 ]
 
 [[package]]
@@ -4249,7 +4267,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "once_cell",
  "png 0.17.16",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "windows-sys 0.60.2",
 ]
 
@@ -4644,7 +4662,7 @@ dependencies = [
  "raw-window-handle",
  "rustc-hash 1.1.0",
  "smallvec",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "wgpu-core-deps-windows-linux-android",
  "wgpu-hal",
  "wgpu-types",
@@ -4674,7 +4692,7 @@ dependencies = [
  "portable-atomic",
  "raw-window-handle",
  "renderdoc-sys",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "wgpu-types",
 ]
 
@@ -4688,7 +4706,7 @@ dependencies = [
  "bytemuck",
  "js-sys",
  "log",
- "thiserror 2.0.17",
+ "thiserror 2.0.20",
  "web-sys",
 ]
 

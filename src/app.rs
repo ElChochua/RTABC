@@ -17,7 +17,7 @@ pub struct App {
     mute_local_pc: bool,
 
     // Tray Icon Manager
-    tray_icon: Option<TrayIcon>,
+    _tray_icon: Option<TrayIcon>,
 }
 
 fn load_icon() -> Icon {
@@ -111,7 +111,7 @@ impl App {
             local_ip_str: my_local_ip,
             label: "RTABC - Listen on Local Network".to_owned(),
             mute_local_pc: false,
-            tray_icon,
+            _tray_icon: tray_icon,
         }
     }
 }
@@ -177,7 +177,7 @@ impl eframe::App for App {
                     );
 
                     if ui.button("Copy").clicked() {
-                        ui.output_mut(|o| o.copied_text = self.local_ip_str.clone());
+                        ctx.copy_text(self.local_ip_str.clone());
                     }
                 });
             });
